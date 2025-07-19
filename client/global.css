@@ -1,0 +1,120 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto:wght@300;400;500;700&display=swap");
+
+@layer base {
+  /**
+   * Family Expense Tracker Theme
+   * Light mode: white background with black text and blue-green shades
+   * Dark mode: black background with white text and blue-green shades
+   */
+  :root {
+    --background: 0 0% 100%; /* White */
+    --foreground: 0 0% 3.9%; /* Near black */
+
+    --card: 0 0% 100%; /* White */
+    --card-foreground: 0 0% 3.9%; /* Near black */
+
+    --popover: 0 0% 100%; /* White */
+    --popover-foreground: 0 0% 3.9%; /* Near black */
+
+    --primary: 219 78% 65%; /* #4F8DFF - Primary Blue */
+    --primary-foreground: 0 0% 100%; /* White */
+
+    --secondary: 210 40% 96%; /* Light gray */
+    --secondary-foreground: 0 0% 9%; /* Dark gray */
+
+    --muted: 210 40% 96%; /* Light muted */
+    --muted-foreground: 215 16% 47%; /* Muted text */
+
+    --accent: 210 40% 96%; /* Light accent */
+    --accent-foreground: 0 0% 9%; /* Dark text */
+
+    --destructive: 0 68% 70%; /* #FF6B6B - Coral */
+    --destructive-foreground: 0 0% 100%; /* White */
+
+    --border: 214 32% 91%; /* Light border */
+    --input: 214 32% 91%; /* Light input border */
+    --ring: 219 78% 65%; /* Primary blue for focus rings */
+
+    --radius: 0.75rem;
+
+    /* Custom expense tracker colors */
+    --expense-primary: 219 78% 65%; /* #4F8DFF - Primary Blue */
+    --expense-mint: 152 68% 58%; /* #39D98A - Mint Green */
+    --expense-coral: 0 68% 70%; /* #FF6B6B - Coral */
+  }
+
+  .dark {
+    --background: 0 0% 7%; /* #121212 - Dark background */
+    --foreground: 0 0% 98%; /* Near white */
+
+    --card: 240 6% 10%; /* Dark card background */
+    --card-foreground: 0 0% 98%; /* Near white */
+
+    --popover: 240 6% 10%; /* Dark popover */
+    --popover-foreground: 0 0% 98%; /* Near white */
+
+    --primary: 219 78% 65%; /* #4F8DFF - Primary Blue (same in dark) */
+    --primary-foreground: 0 0% 100%; /* White */
+
+    --secondary: 240 4% 16%; /* Dark secondary */
+    --secondary-foreground: 0 0% 98%; /* Near white */
+
+    --muted: 240 4% 16%; /* Dark muted */
+    --muted-foreground: 240 5% 65%; /* Muted text in dark */
+
+    --accent: 240 4% 16%; /* Dark accent */
+    --accent-foreground: 0 0% 98%; /* Near white */
+
+    --destructive: 0 68% 70%; /* #FF6B6B - Coral (same in dark) */
+    --destructive-foreground: 0 0% 100%; /* White */
+
+    --border: 240 4% 16%; /* Dark border */
+    --input: 240 4% 16%; /* Dark input border */
+    --ring: 219 78% 65%; /* Primary blue for focus rings */
+
+    /* Custom expense tracker colors for dark mode (same as light) */
+    --expense-primary: 219 78% 65%; /* #4F8DFF - Primary Blue */
+    --expense-mint: 152 68% 58%; /* #39D98A - Mint Green */
+    --expense-coral: 0 68% 70%; /* #FF6B6B - Coral */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-weight: 400;
+    letter-spacing: -0.011em;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+}
+
+@layer utilities {
+  .expense-card {
+    @apply bg-card border border-border rounded-xl shadow-sm transition-all duration-200;
+  }
+
+  .expense-chip {
+    @apply px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200;
+  }
+
+  .gradient-button {
+    @apply bg-gradient-to-r from-blue-500 to-emerald-400 hover:from-blue-600 hover:to-emerald-500 text-white font-semibold transition-all duration-200;
+  }
+}

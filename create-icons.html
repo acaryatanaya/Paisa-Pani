@@ -1,0 +1,163 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Paisa Pani Icon Generator</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background: #f0f0f0;
+      }
+      .icon-container {
+        display: inline-block;
+        margin: 10px;
+        text-align: center;
+      }
+      .icon {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+      }
+      canvas {
+        display: block;
+      }
+      h2 {
+        margin-top: 30px;
+        color: #333;
+      }
+      .download-all {
+        margin: 20px 0;
+      }
+      button {
+        background: linear-gradient(135deg, #4f8dff, #39d98a);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        margin: 5px;
+      }
+      button:hover {
+        opacity: 0.9;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Paisa Pani App Icons</h1>
+    <p>Professional PWA icons for your expense tracking app</p>
+
+    <div class="download-all">
+      <button onclick="downloadAllIcons()">Download All Icons</button>
+      <button onclick="generateAllIcons()">Generate All Sizes</button>
+    </div>
+
+    <div id="icons-container"></div>
+
+    <script>
+      const iconSizes = [16, 32, 72, 96, 128, 144, 152, 192, 384, 512];
+
+      function createIcon(size, isMaskable = false) {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
+        canvas.width = size;
+        canvas.height = size;
+
+        // Background with gradient
+        const gradient = ctx.createLinearGradient(0, 0, size, size);
+        gradient.addColorStop(0, "#4F8DFF");
+        gradient.addColorStop(1, "#39D98A");
+
+        if (isMaskable) {
+          // For maskable icons, use full canvas
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, 0, size, size);
+        } else {
+          // For regular icons, use rounded rectangle
+          const radius = size * 0.2; // 20% radius
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.roundRect(0, 0, size, size, radius);
+          ctx.fill();
+        }
+
+        // White currency symbol (₹)
+        ctx.fillStyle = "white";
+        ctx.font = `bold ${size * 0.5}px Arial, sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("₹", size / 2, size / 2);
+
+        return canvas;
+      }
+
+      function generateAllIcons() {
+        const container = document.getElementById("icons-container");
+        container.innerHTML = "";
+
+        iconSizes.forEach((size) => {
+          // Regular icon
+          const iconDiv = document.createElement("div");
+          iconDiv.className = "icon-container";
+
+          const canvas = createIcon(size);
+          const label = document.createElement("div");
+          label.textContent = `${size}x${size}`;
+
+          const downloadBtn = document.createElement("button");
+          downloadBtn.textContent = "Download";
+          downloadBtn.onclick = () => downloadIcon(canvas, `icon-${size}.png`);
+
+          iconDiv.appendChild(canvas);
+          iconDiv.appendChild(label);
+          iconDiv.appendChild(downloadBtn);
+          container.appendChild(iconDiv);
+
+          // Maskable versions for larger sizes
+          if (size >= 192) {
+            const maskableDiv = document.createElement("div");
+            maskableDiv.className = "icon-container";
+
+            const maskableCanvas = createIcon(size, true);
+            const maskableLabel = document.createElement("div");
+            maskableLabel.textContent = `${size}x${size} (Maskable)`;
+
+            const maskableBtn = document.createElement("button");
+            maskableBtn.textContent = "Download";
+            maskableBtn.onclick = () =>
+              downloadIcon(maskableCanvas, `icon-${size}-maskable.png`);
+
+            maskableDiv.appendChild(maskableCanvas);
+            maskableDiv.appendChild(maskableLabel);
+            maskableDiv.appendChild(maskableBtn);
+            container.appendChild(maskableDiv);
+          }
+        });
+      }
+
+      function downloadIcon(canvas, filename) {
+        const link = document.createElement("a");
+        link.download = filename;
+        link.href = canvas.toDataURL();
+        link.click();
+      }
+
+      function downloadAllIcons() {
+        iconSizes.forEach((size) => {
+          setTimeout(() => {
+            const canvas = createIcon(size);
+            downloadIcon(canvas, `icon-${size}.png`);
+
+            if (size >= 192) {
+              const maskableCanvas = createIcon(size, true);
+              downloadIcon(maskableCanvas, `icon-${size}-maskable.png`);
+            }
+          }, size * 10); // Stagger downloads
+        });
+      }
+
+      // Auto-generate on load
+      generateAllIcons();
+    </script>
+  </body>
+</html>
