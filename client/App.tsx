@@ -1,3 +1,4 @@
+import "./lib/amplify";
 import "./global.css";
 
 import { Toaster } from "@/components/ui/toaster";

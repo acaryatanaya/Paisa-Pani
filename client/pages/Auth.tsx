@@ -1,18 +1,37 @@
+
 import { useState } from "react";
-import { Eye, EyeOff, Mail, User, Lock, ArrowRight } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  User,
+  Lock,
+  ArrowRight,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useTheme } from "@/components/ThemeProvider";
 import { useAuth } from "@/components/AuthContext";
 import { toast } from "@/hooks/use-toast";
 
 export default function Auth() {
   const navigate = useNavigate();
-  const { login, signup, googleSignIn, isLoading: authLoading } = useAuth();
+
+  const {
+    login,
+    signup,
+    confirmSignup,
+    resendSignupCode,
+    isLoading: authLoading,
+  } = useAuth();
+
   const [isLogin, setIsLogin] = useState(true);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -20,16 +39,30 @@ export default function Auth() {
     confirmPassword: "",
   });
 
-  const isLoading = authLoading;
+  const isLoading = authLoading || isResending;
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Basic validation
-    if (!formData.email || !formData.password) {
+    const email = formData.email.trim();
+
+    if (!email || !formData.password) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields",
+        description: "Please enter your email and password.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!isLogin && !formData.name.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter your full name.",
         variant: "destructive",
       });
       return;
@@ -38,16 +71,7 @@ export default function Auth() {
     if (!isLogin && formData.password !== formData.confirmPassword) {
       toast({
         title: "Password Mismatch",
-        description: "Passwords do not match",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!isLogin && !formData.name) {
-      toast({
-        title: "Missing Information",
-        description: "Please enter your full name",
+        description: "Passwords do not match.",
         variant: "destructive",
       });
       return;
@@ -55,22 +79,49 @@ export default function Auth() {
 
     try {
       if (isLogin) {
-        await login(formData.email, formData.password);
-      } else {
-        await signup(formData.name, formData.email, formData.password);
+        await login(email, formData.password);
+
+        toast({
+          title: "Welcome back!",
+          description: "You've been logged in successfully.",
+        });
+
+        navigate("/");
+        return;
+      }
+
+      const needsConfirmation = await signup(
+        formData.name.trim(),
+        email,
+        formData.password,
+      );
+
+      if (needsConfirmation) {
+        setIsConfirming(true);
+        setVerificationCode("");
+
+        toast({
+          title: "Check your email",
+          description: "Enter the verification code sent to your email.",
+        });
+
+        return;
       }
 
       toast({
-        title: isLogin ? "Welcome back!" : "Account created!",
-        description: isLogin
-          ? "You've been logged in successfully"
-          : "Your account has been created successfully",
+        title: "Account created",
+        description: "You can now sign in with your email and password.",
       });
 
-      navigate("/");
+      setIsLogin(true);
+      setFormData((prev) => ({
+        ...prev,
+        password: "",
+        confirmPassword: "",
+      }));
     } catch (error) {
       toast({
-        title: "Authentication Error",
+        title: isLogin ? "Login Failed" : "Signup Failed",
         description:
           error instanceof Error
             ? error.message
@@ -80,29 +131,77 @@ export default function Auth() {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    try {
-      await googleSignIn();
+  const handleConfirmEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!verificationCode.trim()) {
       toast({
-        title: "Welcome!",
-        description: "You've been signed in with Google successfully",
+        title: "Verification Code Required",
+        description: "Enter the code sent to your email.",
+        variant: "destructive",
       });
-      navigate("/");
+      return;
+    }
+
+    try {
+      await confirmSignup(formData.email.trim(), verificationCode.trim());
+
+      toast({
+        title: "Email Verified",
+        description: "Your account is confirmed. Please sign in.",
+      });
+
+      setIsConfirming(false);
+      setIsLogin(true);
+      setVerificationCode("");
+
+      setFormData((prev) => ({
+        ...prev,
+        password: "",
+        confirmPassword: "",
+      }));
     } catch (error) {
       toast({
-        title: "Google Sign-In Error",
-        description: "Failed to sign in with Google. Please try again.",
+        title: "Verification Failed",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Please check your code and try again.",
         variant: "destructive",
       });
     }
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const handleResendCode = async () => {
+    setIsResending(true);
+
+    try {
+      await resendSignupCode(formData.email.trim());
+
+      toast({
+        title: "Verification Code Sent",
+        description: "Check your email for the new code.",
+      });
+    } catch (error) {
+      toast({
+        title: "Unable to Resend Code",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsResending(false);
+    }
   };
 
   const toggleAuthMode = () => {
-    setIsLogin(!isLogin);
+    setIsLogin((prev) => !prev);
+    setIsConfirming(false);
+    setVerificationCode("");
+    setShowPassword(false);
+
     setFormData({
       name: "",
       email: "",
@@ -110,6 +209,113 @@ export default function Auth() {
       confirmPassword: "",
     });
   };
+
+  if (isConfirming) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <div className="flex items-center justify-center py-6 px-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-emerald-400 rounded-xl flex items-center justify-center">
+              <span className="text-white font-bold text-lg">₹</span>
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-card-foreground">
+                Paisa Pani
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Track expenses together
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 flex items-center justify-center px-4 pb-8">
+          <div className="w-full max-w-md">
+            <div className="text-center mb-8">
+              <div className="mx-auto mb-5 w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-950 flex items-center justify-center">
+                <Mail className="w-8 h-8 text-blue-600" />
+              </div>
+
+              <h2 className="text-2xl font-bold text-card-foreground mb-2">
+                Verify your email
+              </h2>
+
+              <p className="text-muted-foreground">
+                We've sent a confirmation code to{" "}
+                <span className="font-medium text-card-foreground">
+                  {formData.email}
+                </span>
+                . Enter it below to activate your account.
+              </p>
+            </div>
+
+            <form onSubmit={handleConfirmEmail} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="verificationCode">Verification code</Label>
+                <Input
+                  id="verificationCode"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  placeholder="Enter your confirmation code"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value)}
+                  className="h-12 text-center text-lg tracking-widest"
+                  required
+                  autoFocus
+                />
+              </div>
+
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full h-12 gradient-button text-base font-semibold"
+              >
+                {authLoading ? "Verifying..." : "Verify Email"}
+                {!authLoading && <ArrowRight className="ml-2" size={20} />}
+              </Button>
+            </form>
+
+            <div className="mt-6 text-center space-y-4">
+              <button
+                type="button"
+                onClick={handleResendCode}
+                disabled={isLoading}
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium disabled:opacity-50"
+              >
+                {isResending ? "Sending..." : "Resend verification code"}
+              </button>
+
+              <div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsConfirming(false);
+                    setVerificationCode("");
+                    setIsLogin(true);
+                    setFormData((prev) => ({
+                      ...prev,
+                      password: "",
+                      confirmPassword: "",
+                    }));
+                  }}
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                >
+                  Back to sign in
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="text-center py-4 px-4">
+          <p className="text-xs text-muted-foreground">
+            Secure email verification powered by Amazon Cognito
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -133,7 +339,6 @@ export default function Auth() {
       {/* Main Content */}
       <div className="flex-1 flex items-center justify-center px-4 pb-8">
         <div className="w-full max-w-md">
-          {/* Welcome Section */}
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-card-foreground mb-2">
               {isLogin ? "Welcome back" : "Create account"}
@@ -145,9 +350,8 @@ export default function Auth() {
             </p>
           </div>
 
-          {/* Auth Form */}
+          {/* Login / Signup Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Name Field (Signup only) */}
             {!isLogin && (
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-sm font-medium">
@@ -156,22 +360,24 @@ export default function Auth() {
                 <div className="relative">
                   <User
                     size={20}
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                   />
                   <Input
                     id="name"
                     type="text"
                     placeholder="Enter your full name"
                     value={formData.name}
-                    onChange={(e) => handleInputChange("name", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("name", e.target.value)
+                    }
                     className="pl-10 h-12"
+                    autoComplete="name"
                     required={!isLogin}
                   />
                 </div>
               </div>
             )}
 
-            {/* Email Field */}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium">
                 Email
@@ -179,21 +385,23 @@ export default function Auth() {
               <div className="relative">
                 <Mail
                   size={20}
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                 />
                 <Input
                   id="email"
                   type="email"
                   placeholder="Enter your email"
                   value={formData.email}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("email", e.target.value)
+                  }
                   className="pl-10 h-12"
+                  autoComplete="email"
                   required
                 />
               </div>
             </div>
 
-            {/* Password Field */}
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-medium">
                 Password
@@ -201,7 +409,7 @@ export default function Auth() {
               <div className="relative">
                 <Lock
                   size={20}
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                 />
                 <Input
                   id="password"
@@ -212,19 +420,20 @@ export default function Auth() {
                     handleInputChange("password", e.target.value)
                   }
                   className="pl-10 pr-10 h-12"
+                  autoComplete={isLogin ? "current-password" : "new-password"}
                   required
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
             </div>
 
-            {/* Confirm Password Field (Signup only) */}
             {!isLogin && (
               <div className="space-y-2">
                 <Label
@@ -236,7 +445,7 @@ export default function Auth() {
                 <div className="relative">
                   <Lock
                     size={20}
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                   />
                   <Input
                     id="confirmPassword"
@@ -247,17 +456,24 @@ export default function Auth() {
                       handleInputChange("confirmPassword", e.target.value)
                     }
                     className="pl-10 h-12"
-                    required={!isLogin}
+                    autoComplete="new-password"
+                    required
                   />
                 </div>
               </div>
             )}
 
-            {/* Forgot Password (Login only) */}
             {isLogin && (
               <div className="text-right">
                 <button
                   type="button"
+                  onClick={() =>
+                    toast({
+                      title: "Password reset",
+                      description:
+                        "Password reset is not implemented yet. We'll add it after the core authentication flow works.",
+                    })
+                  }
                   className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
                 >
                   Forgot password?
@@ -265,13 +481,12 @@ export default function Auth() {
               </div>
             )}
 
-            {/* Submit Button */}
             <Button
               type="submit"
               disabled={isLoading}
               className="w-full h-12 gradient-button text-base font-semibold flex items-center justify-center gap-2"
             >
-              {isLoading ? (
+              {authLoading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
@@ -284,20 +499,20 @@ export default function Auth() {
 
           {/* Divider */}
           <div className="my-6 flex items-center">
-            <div className="flex-1 border-t border-border"></div>
+            <div className="flex-1 border-t border-border" />
             <div className="px-4 text-sm text-muted-foreground">or</div>
-            <div className="flex-1 border-t border-border"></div>
+            <div className="flex-1 border-t border-border" />
           </div>
 
-          {/* Google Sign In */}
+          {/* Google sign-in is not enabled until Cognito is configured for Google */}
           <Button
             type="button"
             variant="outline"
-            onClick={handleGoogleSignIn}
-            disabled={isLoading}
+            disabled
+            title="Google sign-in is not configured yet"
             className="w-full h-12 flex items-center justify-center gap-3"
           >
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
               <path
                 fill="#4285F4"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -308,7 +523,7 @@ export default function Auth() {
               />
               <path
                 fill="#FBBC05"
-                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A11 11 0 0 0 1 12c0 1.78.43 3.45 1.18 4.93l3.66-2.84z"
               />
               <path
                 fill="#EA4335"
@@ -318,10 +533,12 @@ export default function Auth() {
             Continue with Google
           </Button>
 
-          {/* Toggle Auth Mode */}
+          {/* Toggle Login / Signup */}
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
-              {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+              {isLogin
+                ? "Don't have an account?"
+                : "Already have an account?"}{" "}
               <button
                 type="button"
                 onClick={toggleAuthMode}
@@ -338,11 +555,17 @@ export default function Auth() {
       <div className="text-center py-4 px-4">
         <p className="text-xs text-muted-foreground">
           By continuing, you agree to our{" "}
-          <button className="text-blue-600 hover:text-blue-700 transition-colors">
+          <button
+            type="button"
+            className="text-blue-600 hover:text-blue-700 transition-colors"
+          >
             Terms of Service
           </button>{" "}
           and{" "}
-          <button className="text-blue-600 hover:text-blue-700 transition-colors">
+          <button
+            type="button"
+            className="text-blue-600 hover:text-blue-700 transition-colors"
+          >
             Privacy Policy
           </button>
         </p>
