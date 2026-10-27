@@ -16,6 +16,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useGroup } from "@/components/GroupContext";
 import { useExpense } from "@/components/ExpenseContext";
+import { useAuth } from "@/components/AuthContext";
 import { toast } from "@/hooks/use-toast";
 
 const categories = [
@@ -30,21 +31,16 @@ const categories = [
   { value: "others", label: "Others", emoji: "📦" },
 ];
 
-const members = [
-  { value: "tejas", label: "Tejas" },
-  { value: "priyanka", label: "Priyanka" },
-  { value: "abhishek", label: "Abhishek" },
-];
-
 export default function AddExpense() {
   const navigate = useNavigate();
-  const { activeGroup, getActiveGroupName } = useGroup();
+  const { activeGroup, getActiveGroupName, groups } = useGroup();
+  const { user } = useAuth();
   const { addExpense } = useExpense();
   const [formData, setFormData] = useState({
     amount: "",
     category: "",
     type: "personal",
-    paidBy: "tejas",
+    paidBy: "",
     comment: "",
     date: new Date().toISOString().split("T")[0],
     time: new Date().toTimeString().slice(0, 5),
@@ -79,22 +75,30 @@ export default function AddExpense() {
       return;
     }
 
-    const expenseType =
-      formData.type === "personal" ? "Personal" : currentGroupName;
+    if (formData.type === "group" && !activeGroup) {
+      toast({ title: "Create a group first", description: "You can add personal expenses now, or create a group in Settings before adding shared expenses.", variant: "destructive" });
+      return;
+    }
+
+    if (formData.type === "group") {
+      toast({ title: "Group expenses are coming next", description: "We are connecting group membership and shared expenses to the backend. For now, please choose Personal.", variant: "destructive" });
+      return;
+    }
+
+    const expenseType = "Personal";
 
     addExpense({
       category:
         categories.find((c) => c.value === formData.category)?.label ||
         formData.category,
       amount: parseFloat(formData.amount),
-      paidBy:
-        members.find((m) => m.value === formData.paidBy)?.label || "Tejas",
+      paidBy: user?.name || "You",
       comment: formData.comment,
       date: formData.date,
       time: formData.time,
       type: expenseType,
       emoji: getCategoryEmoji(formData.category),
-      groupId: activeGroup,
+      groupId: formData.type === "group" ? activeGroup : "",
     });
 
     toast({
@@ -116,12 +120,12 @@ export default function AddExpense() {
           >
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-lg font-semibold">Add Expense</h1>
+          <div><h1 className="text-lg font-semibold">Add Expense</h1><p className="text-xs text-muted-foreground">Capture it now. Understand it later.</p></div>
         </div>
       </div>
 
       <div className="p-4">
-        <form onSubmit={handleSubmit} className="expense-card p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="expense-card mx-auto max-w-3xl space-y-6 bg-gradient-to-br from-card via-card to-emerald-500/[0.03] p-5 sm:p-7">
           {/* Amount */}
           <div className="space-y-2">
             <Label htmlFor="amount" className="text-sm font-medium">
@@ -181,32 +185,20 @@ export default function AddExpense() {
                 <Label htmlFor="personal">Personal</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="group" id="group" />
-                <Label htmlFor="group">{currentGroupName}</Label>
+                <RadioGroupItem value="group" id="group" disabled={!groups.length} />
+                <Label htmlFor="group" className={!groups.length ? "text-muted-foreground" : ""}>{groups.length ? currentGroupName : "Group (create one first)"}</Label>
               </div>
             </RadioGroup>
           </div>
 
-          {/* Paid By */}
+          {/* Payer is the authenticated account until group-member support is implemented. */}
           <div className="space-y-2">
             <Label className="text-sm font-medium">Paid By</Label>
-            <Select
-              value={formData.paidBy}
-              onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, paidBy: value }))
-              }
-            >
-              <SelectTrigger className="h-12">
-                <SelectValue placeholder="Tejas (You)" />
-              </SelectTrigger>
-              <SelectContent>
-                {members.map((member) => (
-                  <SelectItem key={member.value} value={member.value}>
-                    {member.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex h-12 items-center rounded-md border border-input bg-muted/40 px-3 text-sm">
+              <span className="mr-2 flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-emerald-400 text-xs font-semibold text-white">{user?.name?.charAt(0)?.toUpperCase() || "Y"}</span>
+              <span>{user?.name || "You"}</span>
+              <span className="ml-auto text-xs text-muted-foreground">Signed in</span>
+            </div>
           </div>
 
           {/* Comment */}

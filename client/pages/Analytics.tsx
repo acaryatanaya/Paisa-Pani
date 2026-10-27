@@ -14,7 +14,7 @@ import { useExpense } from "@/components/ExpenseContext";
 const timeFilters = ["Month", "Year", "Custom"];
 
 export default function Analytics() {
-  const { activeGroup, getActiveGroupName } = useGroup();
+  const { activeGroup, getActiveGroupName, groups } = useGroup();
   const { getExpensesByGroup, getTotalSpending } = useExpense();
   const [timeFilter, setTimeFilter] = useState("Month");
   const [typeFilter, setTypeFilter] = useState("All");
@@ -25,7 +25,7 @@ export default function Analytics() {
   });
 
   const currentGroupName = getActiveGroupName();
-  const expenseTypeFilters = ["All", "Personal", currentGroupName];
+  const expenseTypeFilters = groups.length ? ["All", "Personal", currentGroupName] : ["All", "Personal"];
 
   const handleTimeFilterChange = (filter: string) => {
     setTimeFilter(filter);
@@ -33,11 +33,11 @@ export default function Analytics() {
   };
 
   const groupExpenses = useMemo(
-    () => getExpensesByGroup(activeGroup),
+    () => activeGroup ? getExpensesByGroup(activeGroup) : getExpensesByGroup(""),
     [activeGroup, getExpensesByGroup],
   );
   const totalSpending = useMemo(
-    () => getTotalSpending(activeGroup),
+    () => getTotalSpending(activeGroup || undefined),
     [activeGroup, getTotalSpending],
   );
 

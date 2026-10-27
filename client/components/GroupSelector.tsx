@@ -1,119 +1,53 @@
 import { useState } from "react";
-import { ChevronDown, Edit3, Plus, Search } from "lucide-react";
+import { ChevronDown, Plus, Search, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGroup } from "./GroupContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/hooks/use-toast";
 
-interface GroupSelectorProps {
-  className?: string;
-  compact?: boolean;
-}
+interface GroupSelectorProps { className?: string; compact?: boolean }
 
-export function GroupSelector({
-  className,
-  compact = false,
-}: GroupSelectorProps) {
-  const { groups, activeGroup, setActiveGroup, getActiveGroupName } =
-    useGroup();
+export function GroupSelector({ className, compact = false }: GroupSelectorProps) {
+  const { groups, activeGroup, setActiveGroup, getActiveGroupName, addGroup } = useGroup();
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const filteredGroups = groups.filter((group) => group.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
-  const filteredGroups = groups.filter((group) =>
-    group.name.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
-
-  const handleGroupSelect = (groupId: string) => {
-    setActiveGroup(groupId);
+  const createGroup = () => {
+    const name = window.prompt("What would you like to name your group?")?.trim();
+    if (!name) return;
+    if (groups.some((group) => group.name.toLowerCase() === name.toLowerCase())) {
+      toast({ title: "Group already exists", description: "Choose a different name.", variant: "destructive" });
+      return;
+    }
+    addGroup({ id: crypto.randomUUID?.() ?? Date.now().toString(), name, createdAt: new Date().toISOString() });
     setIsOpen(false);
-    setSearchTerm("");
+    toast({ title: "Group created", description: `${name} is ready for you to set up.` });
   };
 
   return (
     <div className={cn("relative", className)}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          "flex items-center gap-2 bg-card rounded-lg border border-border text-sm font-medium hover:bg-muted/50 transition-colors",
-          compact ? "px-2 py-1" : "px-3 py-2",
-        )}
-      >
-        <span className="truncate max-w-32">{getActiveGroupName()}</span>
-        <ChevronDown
-          size={16}
-          className={cn(
-            "transition-transform duration-200 flex-shrink-0",
-            isOpen && "rotate-180",
-          )}
-        />
+      <button onClick={() => setIsOpen(!isOpen)} className={cn("flex items-center gap-2 rounded-xl border border-border bg-card/80 text-sm font-medium shadow-sm transition hover:border-primary/40 hover:bg-muted/50", compact ? "px-3 py-2" : "px-4 py-2.5")}>
+        <Users size={16} className="text-emerald-500" />
+        <span className="truncate max-w-40">{groups.length ? getActiveGroupName() : "Your groups"}</span>
+        <ChevronDown size={16} className={cn("transition-transform", isOpen && "rotate-180")} />
       </button>
-
-      {isOpen && (
-        <>
-          <div
-            className="fixed inset-0 z-10"
-            onClick={() => setIsOpen(false)}
-          />
-          <div className="absolute top-full left-0 mt-1 w-64 bg-card border border-border rounded-lg shadow-lg z-20 max-h-80 overflow-hidden flex flex-col">
-            {/* Search bar for many groups */}
-            {groups.length > 5 && (
-              <div className="p-3 border-b border-border">
-                <div className="relative">
-                  <Search
-                    size={16}
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"
-                  />
-                  <Input
-                    placeholder="Search groups..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9 h-8"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Groups list */}
-            <div className="flex-1 overflow-y-auto">
-              {filteredGroups.map((group) => (
-                <div
-                  key={group.id}
-                  className="flex items-center justify-between p-3 hover:bg-muted/50 transition-colors border-b border-border last:border-b-0"
-                >
-                  <button
-                    onClick={() => handleGroupSelect(group.id)}
-                    className={cn(
-                      "flex-1 text-left text-sm truncate",
-                      group.id === activeGroup && "font-semibold text-blue-600",
-                    )}
-                  >
-                    {group.name}
-                  </button>
-                  <button className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground flex-shrink-0">
-                    <Edit3 size={14} />
-                  </button>
-                </div>
-              ))}
-
-              {filteredGroups.length === 0 && searchTerm && (
-                <div className="p-3 text-sm text-muted-foreground text-center">
-                  No groups found
-                </div>
-              )}
-            </div>
-
-            {/* Add new group button - only show in home page selector */}
-            {!compact && (
-              <div className="p-3 border-t border-border">
-                <Button variant="outline" size="sm" className="w-full">
-                  <Plus size={16} className="mr-2" />
-                  Add New Group
-                </Button>
-              </div>
-            )}
+      {isOpen && <>
+        <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
+        <div className="absolute left-0 top-full z-20 mt-2 flex max-h-96 w-72 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-xl">
+          <div className="border-b border-border p-3">
+            <p className="font-semibold">Your groups</p>
+            <p className="mt-1 text-xs text-muted-foreground">Switch between the groups you manage.</p>
           </div>
-        </>
-      )}
+          {groups.length > 4 && <div className="p-3"><div className="relative"><Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" /><Input placeholder="Search groups..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-9 pl-9" /></div></div>}
+          <div className="flex-1 overflow-y-auto p-1">
+            {filteredGroups.map((group) => <button key={group.id} onClick={() => { setActiveGroup(group.id); setIsOpen(false); }} className={cn("flex w-full items-center rounded-xl px-3 py-3 text-left text-sm transition hover:bg-muted", group.id === activeGroup && "bg-emerald-500/10 font-semibold text-emerald-600")}><Users size={16} className="mr-3 shrink-0" /><span className="truncate">{group.name}</span>{group.id === activeGroup && <span className="ml-auto text-xs">Active</span>}</button>)}
+            {filteredGroups.length === 0 && <p className="p-4 text-center text-sm text-muted-foreground">No groups yet. Create one to get started.</p>}
+          </div>
+          <div className="border-t border-border p-3"><Button onClick={createGroup} className="gradient-button w-full"><Plus size={16} className="mr-2" />Create group</Button></div>
+        </div>
+      </>}
     </div>
   );
 }

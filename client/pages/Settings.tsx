@@ -1,22 +1,9 @@
 import { useState } from "react";
-import {
-  Edit3,
-  Users,
-  Share,
-  LogOut,
-  Moon,
-  Sun,
-  Trash2,
-  Plus,
-  Download,
-  UserPlus,
-  Mail,
-} from "lucide-react";
+import { Edit3, LogOut, Moon, Sun, UserPlus } from "lucide-react";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { GroupSelector } from "@/components/GroupSelector";
 import { GroupManagement } from "@/components/GroupManagement";
 import { ProfileModal } from "@/components/ProfileModal";
-import { InviteModal } from "@/components/InviteModal";
 import { useTheme } from "@/components/ThemeProvider";
 import { useAuth } from "@/components/AuthContext";
 import { useGroup } from "@/components/GroupContext";
@@ -32,7 +19,6 @@ export default function Settings() {
   const { getActiveGroupName, groups } = useGroup();
   const [isDarkMode, setIsDarkMode] = useState(theme === "dark");
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [showInviteModal, setShowInviteModal] = useState(false);
 
   const toggleDarkMode = () => {
     const newTheme = isDarkMode ? "light" : "dark";
@@ -42,9 +28,9 @@ export default function Settings() {
 
   const handleShareApp = async () => {
     const shareData = {
-      title: "Family Expense Tracker",
-      text: "Track your family expenses together with this amazing app!",
-      url: "https://expense-tracker.app",
+      title: "Paisa Pani",
+      text: "A clearer view of your money with Paisa Pani.",
+      url: window.location.origin,
     };
 
     try {
@@ -152,15 +138,15 @@ export default function Settings() {
 
             {/* Share Group Invite */}
             <button
-              onClick={() => setShowInviteModal(true)}
-              className="flex items-center justify-between w-full hover:bg-muted/50 p-2 rounded-lg transition-colors"
+              disabled
+              className="flex w-full cursor-not-allowed items-center justify-between rounded-lg p-2 text-left opacity-60"
             >
               <div className="flex items-center gap-3">
                 <UserPlus size={20} />
                 <div className="text-left">
                   <p className="font-medium">Share Group Invite</p>
                   <p className="text-sm text-muted-foreground">
-                    Invite others to {getActiveGroupName()}
+                    Email invitations will be enabled after backend setup
                   </p>
                 </div>
               </div>
@@ -174,9 +160,9 @@ export default function Settings() {
               <div className="flex items-center gap-3">
                 <Edit3 size={20} />
                 <div className="text-left">
-                  <p className="font-medium">Profile Settings</p>
+                  <p className="font-medium">Account Profile</p>
                   <p className="text-sm text-muted-foreground">
-                    Change photo and name
+                    View your signed-in account details
                   </p>
                 </div>
               </div>
@@ -202,9 +188,9 @@ export default function Settings() {
 
         {/* App Info */}
         <Card className="p-4 text-center">
-          <h3 className="font-semibold text-lg mb-2">Family Expense Tracker</h3>
+          <h3 className="font-semibold text-lg mb-2">Paisa Pani</h3>
           <p className="text-sm text-muted-foreground mb-1">
-            Version 1.0.0 • Built with ❤️ for families
+            A clearer view of your money
           </p>
         </Card>
       </div>
@@ -215,10 +201,6 @@ export default function Settings() {
       <ProfileModal
         isOpen={showProfileModal}
         onClose={() => setShowProfileModal(false)}
-      />
-      <InviteModal
-        isOpen={showInviteModal}
-        onClose={() => setShowInviteModal(false)}
       />
     </div>
   );

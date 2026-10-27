@@ -7,6 +7,7 @@ import { FilterChips } from "@/components/FilterChips";
 import { GroupSelector } from "@/components/GroupSelector";
 import { useGroup } from "@/components/GroupContext";
 import { useExpense } from "@/components/ExpenseContext";
+import { useAuth } from "@/components/AuthContext";
 
 const categoryFilters = [
   "All",
@@ -23,7 +24,8 @@ const categoryFilters = [
 
 export default function Home() {
   const navigate = useNavigate();
-  const { activeGroup, getActiveGroupName } = useGroup();
+  const { activeGroup, getActiveGroupName, groups } = useGroup();
+  const { user } = useAuth();
   const {
     getExpensesByGroup,
     getTotalSpending,
@@ -34,14 +36,14 @@ export default function Home() {
   const [typeFilter, setTypeFilter] = useState("All");
 
   const currentGroupName = getActiveGroupName();
-  const typeFilters = ["All", "Personal", currentGroupName];
+  const typeFilters = groups.length ? ["All", "Personal", currentGroupName] : ["All", "Personal"];
 
   const groupExpenses = useMemo(
-    () => getExpensesByGroup(activeGroup),
+    () => activeGroup ? getExpensesByGroup(activeGroup) : getExpensesByGroup(""),
     [activeGroup, getExpensesByGroup],
   );
   const totalSpending = useMemo(
-    () => getTotalSpending(activeGroup),
+    () => getTotalSpending(activeGroup || undefined),
     [activeGroup, getTotalSpending],
   );
 
@@ -83,12 +85,13 @@ export default function Home() {
       {/* Header */}
       <div className="sticky top-0 bg-background/80 backdrop-blur-sm border-b border-border z-10">
         <div className="flex items-center justify-between p-4">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-emerald-400 rounded-full flex items-center justify-center">
+          <div className="w-11 h-11 bg-gradient-to-br from-indigo-500 via-blue-500 to-emerald-400 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/15">
             <User size={20} className="text-white" />
           </div>
 
           <div className="text-center">
-            <h1 className="text-lg font-semibold">Hey Tejas</h1>
+            <h1 className="text-lg font-semibold">Hey {user?.name?.split(" ")[0] || "there"}</h1>
+            <p className="text-xs text-muted-foreground">A clearer view of your money</p>
           </div>
 
           <button
@@ -101,8 +104,12 @@ export default function Home() {
       </div>
 
       <div className="p-4 space-y-6">
-        {/* Group Selector */}
+        {/* Group selector only appears after the user creates or joins a group */}
         <GroupSelector />
+        {groups.length === 0 && <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-blue-500/5 to-transparent p-4">
+          <p className="font-semibold">Your money, made clearer.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Track personal spending now, or create a group when you are ready to share expenses.</p>
+        </div>}
 
         {/* Category Filters */}
         <div>
@@ -123,7 +130,7 @@ export default function Home() {
         </div>
 
         {/* Total Spending Card */}
-        <div className="expense-card p-6">
+        <div className="expense-card p-6 bg-gradient-to-br from-card via-card to-emerald-500/5">
           <div className="text-center">
             <p className="text-muted-foreground text-sm mb-1">Total Spending</p>
             <h2 className="text-3xl font-bold mb-1 text-card-foreground">
@@ -148,11 +155,11 @@ export default function Home() {
               />
             ))
           ) : (
-            <div className="expense-card p-8 text-center">
-              <p className="text-muted-foreground">No expenses found</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Try adjusting your filters or add a new expense
-              </p>
+            <div className="expense-card p-8 sm:p-10 text-center border-dashed bg-gradient-to-b from-card to-muted/30">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500/15 to-emerald-500/20 text-2xl">₹</div>
+              <h3 className="font-semibold text-lg">Your money story starts here</h3>
+              <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">You do not have any expenses to show yet. Add your first expense to start seeing your spending clearly.</p>
+              <button onClick={() => navigate("/add-expense")} className="gradient-button mt-5 rounded-xl px-5 py-2.5 text-sm">Add your first expense</button>
             </div>
           )}
         </div>

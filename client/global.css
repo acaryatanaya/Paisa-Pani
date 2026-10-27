@@ -42,16 +42,16 @@
     --radius: 0.75rem;
 
     /* Custom expense tracker colors */
-    --expense-primary: 219 78% 65%; /* #4F8DFF - Primary Blue */
-    --expense-mint: 152 68% 58%; /* #39D98A - Mint Green */
+    --expense-primary: 224 82% 65%; /* Indigo blue */
+    --expense-mint: 157 66% 48%; /* Emerald mint */
     --expense-coral: 0 68% 70%; /* #FF6B6B - Coral */
   }
 
   .dark {
-    --background: 0 0% 7%; /* #121212 - Dark background */
+    --background: 222 32% 7%; /* Midnight navy */
     --foreground: 0 0% 98%; /* Near white */
 
-    --card: 240 6% 10%; /* Dark card background */
+    --card: 222 26% 10%; /* Deep navy cards */
     --card-foreground: 0 0% 98%; /* Near white */
 
     --popover: 240 6% 10%; /* Dark popover */
@@ -60,25 +60,25 @@
     --primary: 219 78% 65%; /* #4F8DFF - Primary Blue (same in dark) */
     --primary-foreground: 0 0% 100%; /* White */
 
-    --secondary: 240 4% 16%; /* Dark secondary */
+    --secondary: 220 20% 16%; /* Muted navy */
     --secondary-foreground: 0 0% 98%; /* Near white */
 
-    --muted: 240 4% 16%; /* Dark muted */
+    --muted: 220 20% 15%; /* Muted navy */
     --muted-foreground: 240 5% 65%; /* Muted text in dark */
 
-    --accent: 240 4% 16%; /* Dark accent */
+    --accent: 158 35% 15%; /* Emerald accent */
     --accent-foreground: 0 0% 98%; /* Near white */
 
     --destructive: 0 68% 70%; /* #FF6B6B - Coral (same in dark) */
     --destructive-foreground: 0 0% 100%; /* White */
 
-    --border: 240 4% 16%; /* Dark border */
-    --input: 240 4% 16%; /* Dark input border */
+    --border: 220 18% 19%; /* Soft navy border */
+    --input: 220 18% 19%; /* Soft navy input border */
     --ring: 219 78% 65%; /* Primary blue for focus rings */
 
     /* Custom expense tracker colors for dark mode (same as light) */
-    --expense-primary: 219 78% 65%; /* #4F8DFF - Primary Blue */
-    --expense-mint: 152 68% 58%; /* #39D98A - Mint Green */
+    --expense-primary: 224 82% 65%; /* Indigo blue */
+    --expense-mint: 157 66% 48%; /* Emerald mint */
     --expense-coral: 0 68% 70%; /* #FF6B6B - Coral */
   }
 }
@@ -107,7 +107,11 @@
 
 @layer utilities {
   .expense-card {
-    @apply bg-card border border-border rounded-xl shadow-sm transition-all duration-200;
+    @apply bg-card border border-border rounded-2xl shadow-sm transition-all duration-200;
+  }
+
+  .expense-card:hover {
+    @apply border-primary/20 shadow-md;
   }
 
   .expense-chip {
@@ -115,6 +119,6 @@
   }
 
   .gradient-button {
-    @apply bg-gradient-to-r from-blue-500 to-emerald-400 hover:from-blue-600 hover:to-emerald-500 text-white font-semibold transition-all duration-200;
+    @apply bg-gradient-to-r from-indigo-500 via-blue-500 to-emerald-400 hover:from-indigo-600 hover:via-blue-600 hover:to-emerald-500 text-white font-semibold shadow-sm shadow-emerald-500/10 transition-all duration-200;
   }
 }
